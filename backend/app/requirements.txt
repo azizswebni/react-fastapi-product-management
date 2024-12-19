@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+SQLAlchemy
+psycopg2-binary
+passlib
+python-jose
+aioredis
+redis
+fastapi-pagination[sqlalchemy]
+scalar-fastapi
+pydantic
+pydantic-settings
+slowapi
+bcrypt
+python-multipart

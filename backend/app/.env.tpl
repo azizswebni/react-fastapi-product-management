@@ -1,0 +1,10 @@
+DATABASE_URL=postgresql://postgres:password@db:5432/products_db
+REDIS_URL=redis://redis:6379
+SECRET_KEY=supersecret_here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=products_db
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin_password_here
