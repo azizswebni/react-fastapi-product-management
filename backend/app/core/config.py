@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Admin credentials
-    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD")
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "changeme")
     
     class Config:
         env_file = ".env"
