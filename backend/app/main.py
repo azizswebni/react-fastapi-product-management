@@ -14,6 +14,8 @@ from app.core.config import limiter
 from fastapi_pagination import  add_pagination
 from app.core.security import get_password_hash
 import os
+from fastapi.middleware.cors import CORSMiddleware
+
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -27,7 +29,13 @@ app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, custom_exception_handler)
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 add_pagination(app)
 

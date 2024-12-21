@@ -55,9 +55,8 @@ async def get_products(
         if cached_data:
             return Page.parse_raw(cached_data)
         
-        query = db.query(Product).offset((page - 1) * size).limit(size)
+        query = db.query(Product)
         result = paginate(query)
-        
         
         favorite_products = {p.id for p in user.favorite_products}
         

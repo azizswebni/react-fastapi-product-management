@@ -1,0 +1,2 @@
+VITE_API_URL=http://localhost:8000
+VITE_CRYPTO_SECRET_Key="dsfds543fq1dsq35f135DS1F35Q1"
