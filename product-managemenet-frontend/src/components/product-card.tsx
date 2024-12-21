@@ -28,7 +28,7 @@ export function ProductCard({ id, category, description, is_favorite, name, pric
         <div className="mt-2 flex justify-between items-center">
           <p className="text-2xl font-bold">${price}</p>
           <Button variant="outline" size="icon" className={is_favorite ? "text-red-500" : "text-gray-500"}>
-            <Heart className="h-4 w-4" />
+            <Heart className="h-4 w-4 " fill={is_favorite ? 'red':"none"} />
           </Button>
         </div>
       </CardContent>

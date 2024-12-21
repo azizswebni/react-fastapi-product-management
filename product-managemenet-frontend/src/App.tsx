@@ -29,7 +29,7 @@ function App() {
         },
         {
           path: "/account",
-          element: <h1>account</h1>,
+          element: <h1>still in progress</h1>,
         },
       ],
     },
