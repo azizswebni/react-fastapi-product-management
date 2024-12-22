@@ -9,9 +9,8 @@ from app.core.cache import redis_client
 from app.core.security import verify_token
 from app.core.exceptions import AppException
 import uuid
-import json
 from typing import Optional, List
-
+from app.api.utils.utils import get_user,build_product_query
 router = APIRouter()
 
 @router.post("/", response_model=ProductResponse)
@@ -41,34 +40,28 @@ async def create_product(
 async def get_products(
     request: Request,
     page: int = 1, 
-    size: int = 10, 
+    size: int = 10,
+    name: Optional[str] = None,
+    category: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
     db: Session = Depends(get_session_local),
     username: str = Depends(verify_token)
 ):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user:
-            raise AppException(name="Authorization Error", detail="User not found")
+        user = get_user(username, db)
 
-        cache_key = f"product_list:{username}:{page}:{size}"
-        cached_data = await redis_client.get(cache_key)
-        if cached_data:
-            return Page.parse_raw(cached_data)
         
-        query = db.query(Product)
-        result = paginate(query)
+        
+        products_query = build_product_query(db, name, category, min_price, max_price)
+        
+        result = paginate(products_query)
         
         favorite_products = {p.id for p in user.favorite_products}
         
         
         for item in result.items:
             item.is_favorite = item.id in favorite_products
-
-        await redis_client.set(
-            cache_key, 
-            result.json(), 
-            ex=60
-        )
         
         return result
     except AppException as e:
@@ -127,37 +120,6 @@ async def delete_product(
         raise e
     except Exception as e:
         raise AppException(name="Product Deletion Error", detail=str(e))
-
-@router.get("/search", response_model=Page[ProductResponse])
-async def search_products(
-    query: Optional[str] = None,
-    category: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    db: Session = Depends(get_session_local),
-    username: str = Depends(verify_token)
-):
-    try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user:
-            raise AppException(name="Authorization Error", detail="User not found")
-
-        products_query = db.query(Product)
-        
-        if query:
-            products_query = products_query.filter(Product.name.ilike(f"%{query}%"))
-        if category:
-            products_query = products_query.filter(Product.category == category)
-        if min_price is not None:
-            products_query = products_query.filter(Product.price >= min_price)
-        if max_price is not None:
-            products_query = products_query.filter(Product.price <= max_price)
-            
-        return paginate(products_query)
-    except AppException as e:
-        raise e
-    except Exception as e:
-        raise AppException(name="Product Search Error", detail=str(e))
 
 @router.post("/{product_id}/favorite")
 async def add_favorite(

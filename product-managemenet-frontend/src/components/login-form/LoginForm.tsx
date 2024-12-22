@@ -51,7 +51,6 @@ export function LoginForm({
     mutationFn: loginService,
     onSuccess: (data: LoginResponse) => {
       const token = data.access_token
-      localStorage.setItem('token',token)
       login(token, form.getValues().username, data.role);
       navigate("/");
     },

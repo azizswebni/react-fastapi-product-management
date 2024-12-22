@@ -1,8 +1,7 @@
 export interface LoginResponse {
-    access_token: string;
+  access_token: string;
   role: string;
 }
-
 
 export interface Product {
   name: string;
@@ -19,4 +18,14 @@ export interface PaginatedProductData {
   page: number;
   size: number;
   pages: number;
+}
+export interface addProductPayload {
+  name: string;
+  category: string;
+  description: string;
+  price: number;
+}
+
+export interface ResponseDetail {
+  details: string;
 }
