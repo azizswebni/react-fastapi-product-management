@@ -10,6 +10,7 @@ export interface Product {
   category: string;
   id: string;
   is_favorite: boolean;
+  image_url?: string | null
 }
 
 export interface PaginatedProductData {
@@ -35,6 +36,7 @@ export interface updateProductPayload {
 
 export interface ResponseDetail {
   details: string;
+  id?:string
 }
 
 export interface AxiosError {

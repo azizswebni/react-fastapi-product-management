@@ -38,8 +38,10 @@ interface ProductCardProps {
   is_favorite: boolean;
   name: string;
   price: string;
+  image_url?: string; // New prop for image URL
   refetch: () => void;
 }
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export function ProductCard({
   id,
@@ -48,6 +50,7 @@ export function ProductCard({
   is_favorite,
   name,
   price,
+  image_url,
   refetch,
 }: ProductCardProps) {
   const [favorite, setFavorite] = useState(is_favorite);
@@ -109,7 +112,7 @@ export function ProductCard({
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full h-fit">
       <CardHeader>
         <div className="flex flex-row justify-between items-start">
           <div>
@@ -128,6 +131,15 @@ export function ProductCard({
         </div>
       </CardHeader>
       <CardContent>
+        {image_url && (
+          <img
+            src={`${baseURL}${image_url}`}
+            alt={`${name} image`}
+            className="w-full h-48 object-cover rounded-md"
+            loading="lazy"
+            onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+          />
+        )}
         <div className="mt-2 flex justify-between items-center">
           <p className="text-2xl font-bold">${price}</p>
 

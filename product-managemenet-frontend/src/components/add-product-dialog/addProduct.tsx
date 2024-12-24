@@ -22,10 +22,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useMutation } from "react-query";
-import { addProductService } from "@/services/products/productsServices";
+import {
+  addProductService,
+  uploadProductImageService,
+} from "@/services/products/productsServices";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "../ui/toaster";
 import { useState } from "react";
+import { useDropzone } from "react-dropzone";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -45,22 +49,47 @@ const inputsTypes = {
 
 export function AddProduct({ refetch }: { refetch: () => void }) {
   const [open, setOpen] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null); // State for the uploaded file
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema)
+    resolver: zodResolver(formSchema),
   });
   const { toast } = useToast();
 
-  const addProductMutation = useMutation({
-    mutationFn: addProductService,
+  const uploadProductImageMutation = useMutation({
+    mutationFn: (data: { file: File; id: string }) =>
+      uploadProductImageService(data.id, data.file),
     onSuccess: () => {
       toast({
-        title: "Product added successfully !",
+        title: "Product added successfully!",
       });
-      refetch();
-      setOpen(false)
-      form.reset()
+      resetComponent();
     },
-    onError: (err_message:string) => {
+    onError: (err_message: string) => {
+      toast({
+        title: err_message,
+      });
+    },
+  });
+  const resetComponent = () => {
+    refetch();
+    setOpen(false);
+    form.reset();
+    setUploadedFile(null);
+  };
+
+  const addProductMutation = useMutation({
+    mutationFn: addProductService,
+    onSuccess: ({ id }) => {
+      if (uploadedFile && id) {
+        uploadProductImageMutation.mutate({ file: uploadedFile, id });
+      } else {
+        toast({
+          title: "Product added successfully!",
+        });
+        resetComponent();
+      }
+    },
+    onError: (err_message: string) => {
       toast({
         title: err_message,
       });
@@ -71,8 +100,20 @@ export function AddProduct({ refetch }: { refetch: () => void }) {
     addProductMutation.mutate(values);
   }
 
+  const onDrop = (acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      setUploadedFile(acceptedFiles[0]); // Save the first file
+    }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "image/*": [] }, // Accept only image files
+    maxFiles: 1,
+  });
+
   return (
-    <Dialog open={open} onOpenChange={setOpen} >
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <Plus /> Add Product
@@ -116,8 +157,26 @@ export function AddProduct({ refetch }: { refetch: () => void }) {
                 )}
               />
             ))}
+            <div>
+              <FormLabel>Product Image</FormLabel>
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-md p-4 ${
+                  isDragActive ? "bg-gray-100" : ""
+                }`}
+              >
+                <input {...getInputProps()} />
+                {uploadedFile ? (
+                  <p>{uploadedFile.name}</p>
+                ) : isDragActive ? (
+                  <p>Drop the file here...</p>
+                ) : (
+                  <p>Drag & drop an image here, or click to select one</p>
+                )}
+              </div>
+            </div>
             <DialogFooter>
-                <Button type="submit">Confirm</Button>
+              <Button type="submit">Confirm</Button>
             </DialogFooter>
           </form>
         </Form>

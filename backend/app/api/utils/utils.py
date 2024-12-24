@@ -3,12 +3,18 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from app.core.exceptions import AppException
 from app.core.cache import redis_client
-
+from fastapi import HTTPException
 
 def get_user(username: str, db: Session) -> User:
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise AppException(name="Authorization Error", detail="User not found")
+    return user
+
+def admin_required(username: str, db: Session):
+    user = get_user(username, db)
+    if not user or user.role != "admin":
+        raise HTTPException(status_code=403, detail="You do not have permission to perform this action.")
     return user
 
 

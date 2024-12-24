@@ -10,7 +10,7 @@ from app.core.security import verify_token
 from app.core.exceptions import AppException
 import uuid
 from typing import Optional, List
-from app.api.utils.utils import get_user,build_product_query,delete_redis_cache,get_redis_cache,set_redis_cache
+from app.api.utils.utils import get_user,build_product_query,delete_redis_cache,get_redis_cache,set_redis_cache,admin_required
 from app.core.constants import PRODUCT_LIST_INDEX,UPLOAD_DIR
 from fastapi import UploadFile, File, HTTPException
 import shutil
@@ -26,7 +26,8 @@ async def create_product(
     username: str = Depends(verify_token)
 ):
     try:
-        user = get_user(username, db)
+        user = admin_required(username, db)
+    
         existing_product = db.query(Product).filter(Product.name == product.name).first()
         if existing_product:
             raise AppException(name="Product Creation Error", detail="A product with the same name already exists.")
@@ -91,7 +92,7 @@ async def update_product(
     username: str = Depends(verify_token)
 ):
     try:
-        user = get_user(username, db)
+        user = admin_required(username, db)
 
         db_product = db.query(Product).filter(Product.id == product_id).first()
         if not db_product:
@@ -117,7 +118,7 @@ async def delete_product(
     username: str = Depends(verify_token)
 ):
     try:
-        user = get_user(username, db)
+        user = admin_required(username, db)
 
         db_product = db.query(Product).filter(Product.id == product_id).first()
         if not db_product:
@@ -209,7 +210,7 @@ async def get_favorite_products(
     
     
 
-@router.post("/{product_id}/upload-image", response_model=ProductResponse)
+@router.post("/{product_id}/upload-image")
 async def upload_product_image(
     product_id: str,
     file: UploadFile = File(...),
@@ -217,6 +218,7 @@ async def upload_product_image(
     username: str = Depends(verify_token),
 ):
     try:
+        user = admin_required(username, db)
         if file.content_type not in ["image/jpeg", "image/png"]:
             raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG are allowed.")
 
@@ -241,12 +243,14 @@ async def upload_product_image(
         
         
         return {"message": "File uploaded successfully", "filename": str(file_path)}
+    except AppException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 
 @router.get("/images/{filename}")
-async def serve_image(filename: str,username: str = Depends(verify_token)):
+async def serve_image(filename: str):
     try:
         file_path = UPLOAD_DIR / filename
 

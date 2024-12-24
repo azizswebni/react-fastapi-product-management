@@ -37,6 +37,32 @@ export const addProductService = async (
   }
 };
 
+export const uploadProductImageService = async (
+  id: string,
+  file: File
+): Promise<ResponseDetail> => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file); 
+
+    const { data } = await axiosInstance.post<ResponseDetail>(
+      `/products/${id}/upload-image`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data", // Set the proper content type
+        },
+      }
+    );
+
+    return data;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError;
+    throw axiosError.response?.data?.detail || "An unexpected error occurred.";
+  }
+};
+
+
 export const updateProductService = async (
   id: string,
   updateProductData: updateProductPayload
