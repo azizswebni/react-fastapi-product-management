@@ -37,8 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <GalleryVerticalEnd className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Documentation</span>
-                  <span className="">v1.0.0</span>
+                  <span className="font-semibold">Solyntek test</span>
                 </div>
               </a>
             </SidebarMenuButton>

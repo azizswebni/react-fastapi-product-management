@@ -10,7 +10,9 @@ from app.core.security import verify_token
 from app.core.exceptions import AppException
 import uuid
 from typing import Optional, List
-from app.api.utils.utils import get_user,build_product_query
+from app.api.utils.utils import get_user,build_product_query,delete_redis_cache,get_redis_cache,set_redis_cache
+from app.core.constants import PRODUCT_LIST_INDEX
+
 router = APIRouter()
 
 @router.post("/", response_model=ProductResponse)
@@ -21,15 +23,17 @@ async def create_product(
     username: str = Depends(verify_token)
 ):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user or user.role != "admin":
-            raise AppException(name="Authorization Error", detail="Insufficient privileges")
-
+        user = get_user(username, db)
+        existing_product = db.query(Product).filter(Product.name == product.name).first()
+        if existing_product:
+            raise AppException(name="Product Creation Error", detail="A product with the same name already exists.")
+        
         new_product = Product(**product.dict(), id=str(uuid.uuid4()))
         db.add(new_product)
         db.commit()
         db.refresh(new_product)
-        await redis_client.delete("product_list")
+        cache_key = f"{PRODUCT_LIST_INDEX}:{username}:*"
+        await delete_redis_cache(cache_key)
         return new_product
     except AppException as e:
         raise e
@@ -51,6 +55,11 @@ async def get_products(
     try:
         user = get_user(username, db)
 
+        cache_key = f"{PRODUCT_LIST_INDEX}:{username}:{page}:{size}:{name}:{category}:{min_price}:{max_price}" 
+        
+        cached_data = await get_redis_cache(cache_key)
+        if cached_data:
+            return Page.parse_raw(cached_data)
         
         
         products_query = build_product_query(db, name, category, min_price, max_price)
@@ -63,6 +72,8 @@ async def get_products(
         for item in result.items:
             item.is_favorite = item.id in favorite_products
         
+        await set_redis_cache(cache_key,result.json())
+
         return result
     except AppException as e:
         raise e
@@ -77,9 +88,7 @@ async def update_product(
     username: str = Depends(verify_token)
 ):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user or user.role != "admin":
-            raise AppException(name="Authorization Error", detail="Insufficient privileges")
+        user = get_user(username, db)
 
         db_product = db.query(Product).filter(Product.id == product_id).first()
         if not db_product:
@@ -90,7 +99,8 @@ async def update_product(
         
         db.commit()
         db.refresh(db_product)
-        await redis_client.delete("product_list")
+        cache_key = f"{PRODUCT_LIST_INDEX}:{username}:*"
+        await delete_redis_cache(cache_key)
         return db_product
     except AppException as e:
         raise e
@@ -104,9 +114,7 @@ async def delete_product(
     username: str = Depends(verify_token)
 ):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user or user.role != "admin":
-            raise AppException(name="Authorization Error", detail="Insufficient privileges")
+        user = get_user(username, db)
 
         db_product = db.query(Product).filter(Product.id == product_id).first()
         if not db_product:
@@ -114,7 +122,8 @@ async def delete_product(
         
         db.delete(db_product)
         db.commit()
-        await redis_client.delete("product_list")
+        cache_key = f"{PRODUCT_LIST_INDEX}:{username}:*"
+        await delete_redis_cache(cache_key)
         return {"detail": "Product deleted successfully"}
     except AppException as e:
         raise e
@@ -128,19 +137,24 @@ async def add_favorite(
     username: str = Depends(verify_token)
 ):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user:
-            raise AppException(name="Authorization Error", detail="User not found")
+        user = get_user(username, db)
 
         product = db.query(Product).filter(Product.id == product_id).first()
         if not product:
             raise AppException(name="Not Found", detail="Product not found")
+        
+
+        cache_key = f"{PRODUCT_LIST_INDEX}:{username}:*"
+        await delete_redis_cache(cache_key)
 
         if product not in user.favorite_products:
             user.favorite_products.append(product)
             db.commit()
             await redis_client.delete(f"product_list:{username}:*")
             return {"detail": "Product added to favorites"}
+        
+
+
         return {"detail": "Product already in favorites"}
     except AppException as e:
         raise e
@@ -154,18 +168,17 @@ async def remove_favorite(
     username: str = Depends(verify_token)
 ):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user:
-            raise AppException(name="Authorization Error", detail="User not found")
+        user = get_user(username, db)
 
         product = db.query(Product).filter(Product.id == product_id).first()
         if not product:
             raise AppException(name="Not Found", detail="Product not found")
 
+        cache_key = f"{PRODUCT_LIST_INDEX}:{username}:*"
+        await delete_redis_cache(cache_key)
         if product in user.favorite_products:
             user.favorite_products.remove(product)
             db.commit()
-            await redis_client.delete(f"product_list:{username}:*")
             return {"detail": "Product removed from favorites"}
         return {"detail": "Product not in favorites"}
     except AppException as e:
@@ -179,9 +192,7 @@ async def get_favorite_products(
     username: str = Depends(verify_token)
 ):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user:
-            raise AppException(name="Authorization Error", detail="User not found")
+        user = get_user(username, db)
 
         favorites = [
             {**product.__dict__, "is_favorite": True} 

@@ -20,23 +20,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useMutation } from "react-query";
-import { loginService } from "@/services/authentication/authService";
+import { RegisterService } from "@/services/authentication/authService";
 import { useNavigate } from "react-router-dom";
 import { AuthResponse } from "@/lib/types";
 import { useAuthStore } from "@/store/auth.store";
 import { Toaster } from "../ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 
-const formSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
-  }),
-});
+const formSchema = z
+  .object({
+    username: z.string().min(2, {
+      message: "Username must be at least 2 characters.",
+    }),
+    password: z.string().min(8, {
+      message: "Password must be at least 8 characters.",
+    }),
+    confirmPassword: z.string().min(8, {
+      message: "Confirm Password must be at least 8 characters.",
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match.",
+    path: ["confirmPassword"], // Set the error on the confirmPassword field
+  });
 
-export function LoginForm({
+export function RegisterForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
@@ -45,13 +53,14 @@ export function LoginForm({
     defaultValues: {
       username: "",
       password: "",
+      confirmPassword: "",
     },
   });
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const { toast } = useToast();
-  const loginMutation = useMutation({
-    mutationFn: loginService,
+  const registerMutation = useMutation({
+    mutationFn: RegisterService,
     onSuccess: (data: AuthResponse) => {
       const token = data.access_token;
       login(token, form.getValues().username, data.role);
@@ -65,16 +74,16 @@ export function LoginForm({
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    loginMutation.mutate(values);
+    registerMutation.mutate(values);
   }
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Register</CardTitle>
           <CardDescription>
-            Enter your username below to login to your account
+            Enter your username and password below to create an account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -110,9 +119,27 @@ export function LoginForm({
                   </FormItem>
                 )}
               />
-
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="***********"
+                        {...field}
+                        type="password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="flex flex-col gap-10">
-                <a href="/register"><p>I want to create an account</p></a>
+                <a href="/login">
+                  <p>I already have an account</p>
+                </a>
                 <Button type="submit">Submit</Button>
               </div>
             </form>

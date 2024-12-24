@@ -26,7 +26,7 @@ function Products() {
     queryFn: () => getProductsService(page, size, debouncedSearchValue, option),
     onSuccess: (data: PaginatedProductData) => {
       if (data.pages < page) {
-        setPage(data.pages);
+        setPage(1);
       }
     },
   });
@@ -52,7 +52,7 @@ function Products() {
     <div className="h-full w-full p-10">
       <div className="container mx-auto p-4">
         <div className="flex flex-row justify-between">
-          <h1 className="text-2xl font-bold mb-4">Product Showcase</h1>
+          <h1 className="text-2xl font-bold mb-4">Products</h1>
           {isAdmin && <AddProduct refetch={refetch} />}
         </div>
         {paginated_products_data && (
@@ -66,6 +66,7 @@ function Products() {
             page={page}
             option={option}
             setOptions={setOptions}
+            refetch={refetch}
           />
         )}
       </div>

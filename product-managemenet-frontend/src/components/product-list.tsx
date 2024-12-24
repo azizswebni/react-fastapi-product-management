@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Pagination,
   PaginationContent,
@@ -33,6 +31,7 @@ interface ProductListProps {
   setDebouncedSearchValue: (name: string) => void;
   option: string;
   setOptions: (option: string) => void;
+  refetch: () => void;
 }
 
 export function ProductList({
@@ -45,6 +44,7 @@ export function ProductList({
   setDebouncedSearchValue,
   option,
   setOptions,
+  refetch
 }: ProductListProps) {
   const handlePageChange = (page: number) => {
     setPage(page);
@@ -102,7 +102,7 @@ export function ProductList({
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {products.map((product) => (
-          <ProductCard key={product.id} {...product} />
+          <ProductCard key={product.id} {...product} refetch={refetch} />
         ))}
       </div>
       {totalPages > 1 && (

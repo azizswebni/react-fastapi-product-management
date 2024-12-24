@@ -1,4 +1,4 @@
-import { Edit, Heart, Trash } from "lucide-react";
+import { Heart, Trash } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { UpdateProduct } from "./update-product-dialog/updateProduct";
 
 interface ProductCardProps {
   id: string;
@@ -37,6 +38,7 @@ interface ProductCardProps {
   is_favorite: boolean;
   name: string;
   price: string;
+  refetch: () => void;
 }
 
 export function ProductCard({
@@ -46,6 +48,7 @@ export function ProductCard({
   is_favorite,
   name,
   price,
+  refetch,
 }: ProductCardProps) {
   const [favorite, setFavorite] = useState(is_favorite);
   const { isAdmin } = useAuthStore();
@@ -58,9 +61,9 @@ export function ProductCard({
         title: "Product added to favorite successfully !",
       });
     },
-    onError: () => {
+    onError: (error_message: string) => {
       toast({
-        title: "Failed to add product to favorites",
+        title: error_message,
       });
     },
   });
@@ -70,13 +73,11 @@ export function ProductCard({
       toast({
         title: "Product deleted successfully !",
       });
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      refetch();
     },
-    onError: () => {
+    onError: (error_message: string) => {
       toast({
-        title: "Failed to delete product !",
+        title: error_message,
       });
     },
   });
@@ -88,9 +89,9 @@ export function ProductCard({
         title: "Product removed from favorite successfully !",
       });
     },
-    onError: () => {
+    onError: (error_message: string) => {
       toast({
-        title: "Failed to delete product from favorites",
+        title: error_message,
       });
     },
   });
@@ -132,9 +133,14 @@ export function ProductCard({
 
           <div className="flex justify-center items-center gap-2">
             {isAdmin && (
-              <Button variant="outline" size="icon">
-                <Edit />
-              </Button>
+              <UpdateProduct
+                refetch={refetch}
+                id={id}
+                category={category}
+                description={description}
+                name={name}
+                price={parseInt(price)}
+              />
             )}
             {isAdmin && (
               <AlertDialog>

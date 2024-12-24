@@ -1,4 +1,4 @@
-export interface LoginResponse {
+export interface AuthResponse {
   access_token: string;
   role: string;
 }
@@ -26,6 +26,21 @@ export interface addProductPayload {
   price: number;
 }
 
+export interface updateProductPayload {
+  name: string;
+  category: string;
+  description: string;
+  price: number;
+}
+
 export interface ResponseDetail {
   details: string;
+}
+
+export interface AxiosError {
+  response?: {
+    data?: {
+      detail?: string;
+    };
+  };
 }

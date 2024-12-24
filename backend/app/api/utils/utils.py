@@ -2,6 +2,7 @@ from app.db.models import Product, User
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.core.exceptions import AppException
+from app.core.cache import redis_client
 
 
 def get_user(username: str, db: Session) -> User:
@@ -30,3 +31,22 @@ def build_product_query(
         
         
     return products_query
+
+
+async def set_redis_cache(cache_key:str,data,ex:int=60):
+    await redis_client.set(
+        cache_key, 
+        data, 
+        ex=ex
+    )
+
+async def get_redis_cache(cache_key:str):
+    cached_data = await redis_client.get(cache_key)
+    if cached_data:
+        return cached_data
+    return None
+    
+async def delete_redis_cache(cache_key:str):
+    keys = await redis_client.keys(cache_key)
+    if keys:
+        await redis_client.delete(*keys)

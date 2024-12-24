@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -26,6 +25,7 @@ import { useMutation } from "react-query";
 import { addProductService } from "@/services/products/productsServices";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "../ui/toaster";
+import { useState } from "react";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -44,22 +44,25 @@ const inputsTypes = {
 };
 
 export function AddProduct({ refetch }: { refetch: () => void }) {
+  const [open, setOpen] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema)
   });
   const { toast } = useToast();
 
   const addProductMutation = useMutation({
     mutationFn: addProductService,
     onSuccess: () => {
-      refetch();
       toast({
         title: "Product added successfully !",
       });
+      refetch();
+      setOpen(false)
+      form.reset()
     },
-    onError: () => {
+    onError: (err_message:string) => {
       toast({
-        title: "Failed to add product",
+        title: err_message,
       });
     },
   });
@@ -69,7 +72,7 @@ export function AddProduct({ refetch }: { refetch: () => void }) {
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen} >
       <DialogTrigger asChild>
         <Button variant="outline">
           <Plus /> Add Product
@@ -114,9 +117,7 @@ export function AddProduct({ refetch }: { refetch: () => void }) {
               />
             ))}
             <DialogFooter>
-              <DialogClose asChild>
                 <Button type="submit">Confirm</Button>
-              </DialogClose>
             </DialogFooter>
           </form>
         </Form>
