@@ -18,6 +18,7 @@ class Product(Base):
     description = Column(String)
     price = Column(Float)
     category = Column(String)
+    image_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

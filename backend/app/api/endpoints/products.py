@@ -11,7 +11,10 @@ from app.core.exceptions import AppException
 import uuid
 from typing import Optional, List
 from app.api.utils.utils import get_user,build_product_query,delete_redis_cache,get_redis_cache,set_redis_cache
-from app.core.constants import PRODUCT_LIST_INDEX
+from app.core.constants import PRODUCT_LIST_INDEX,UPLOAD_DIR
+from fastapi import UploadFile, File, HTTPException
+import shutil
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
@@ -203,3 +206,55 @@ async def get_favorite_products(
         raise e
     except Exception as e:
         raise AppException(name="Favorites Retrieval Error", detail=str(e))
+    
+    
+
+@router.post("/{product_id}/upload-image", response_model=ProductResponse)
+async def upload_product_image(
+    product_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_session_local),
+    username: str = Depends(verify_token),
+):
+    try:
+        if file.content_type not in ["image/jpeg", "image/png"]:
+            raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG are allowed.")
+
+        product = db.query(Product).filter(Product.id == product_id).first()
+        
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found.")
+
+        file_extension = file.filename.split(".")[-1]
+        filename = f"{uuid.uuid4()}.{file_extension}"
+        file_path = UPLOAD_DIR / filename
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        product.image_url = f"/images/{filename}"
+        db.commit()
+        db.refresh(product)
+        
+        cache_key = f"{PRODUCT_LIST_INDEX}:{username}:*"
+        await delete_redis_cache(cache_key)
+        
+        
+        return {"message": "File uploaded successfully", "filename": str(file_path)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/images/{filename}")
+async def serve_image(filename: str,username: str = Depends(verify_token)):
+    try:
+        file_path = UPLOAD_DIR / filename
+
+        if not file_path.exists() or not file_path.is_file():
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        return FileResponse(file_path, media_type="image/jpeg")
+    except AppException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

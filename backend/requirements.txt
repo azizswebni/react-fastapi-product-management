@@ -13,3 +13,4 @@ pydantic-settings
 slowapi
 bcrypt
 python-multipart
+alembic

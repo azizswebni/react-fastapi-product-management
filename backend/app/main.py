@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from app.db.base import engine, SessionLocal
 from app.db.models import Base, Product, User
 from app.api import api_router
-from app.core.cache import redis_client
 from sqlalchemy.orm import Session
 import uuid
 from app.core.exceptions import (app_exception_handler, sqlalchemy_exception_handler, validation_exception_handler, AppException, custom_exception_handler)
@@ -15,6 +14,7 @@ from fastapi_pagination import  add_pagination
 from app.core.security import get_password_hash
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 Base.metadata.create_all(bind=engine)
@@ -29,6 +29,8 @@ app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, custom_exception_handler)
 
+app.mount("/images", StaticFiles(directory="uploads/images"), name="images")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
@@ -38,6 +40,7 @@ app.add_middleware(
 )
 
 add_pagination(app)
+
 
 @app.on_event("startup")
 async def startup_event():
