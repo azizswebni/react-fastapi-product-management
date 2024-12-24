@@ -20,6 +20,10 @@ const data = {
     {
       title: "Products",
       url: "/",
+    },
+    {
+      title: "Favorite Products",
+      url: "/favs",
     }
   ],
 };

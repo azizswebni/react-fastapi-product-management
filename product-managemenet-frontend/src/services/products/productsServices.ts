@@ -3,11 +3,10 @@ import {
   addProductPayload,
   AxiosError,
   PaginatedProductData,
+  Product,
   ResponseDetail,
   updateProductPayload,
 } from "@/lib/types";
-
-
 
 export const deleteProductService = async (
   id: string
@@ -39,7 +38,7 @@ export const addProductService = async (
 };
 
 export const updateProductService = async (
-  id:string,
+  id: string,
   updateProductData: updateProductPayload
 ): Promise<ResponseDetail> => {
   try {
@@ -69,9 +68,12 @@ export const getProductsService = async (
       params[`${options}`] = optionValue;
     }
 
-    const { data } = await axiosInstance.get<PaginatedProductData>("/products/", {
-      params,
-    });
+    const { data } = await axiosInstance.get<PaginatedProductData>(
+      "/products/",
+      {
+        params,
+      }
+    );
     return data;
   } catch (error: unknown) {
     const axiosError = error as AxiosError;
@@ -85,6 +87,18 @@ export const addFavoriteService = async (
   try {
     const { data } = await axiosInstance.post<{ detail: string }>(
       `/products/${productId}/favorite`
+    );
+    return data;
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError;
+    throw axiosError.response?.data?.detail || "An unexpected error occurred.";
+  }
+};
+
+export const getFavoriteProductsService = async (): Promise<[Product]> => {
+  try {
+    const { data } = await axiosInstance.get<[Product]>(
+      `/products/favorites`
     );
     return data;
   } catch (error: unknown) {
